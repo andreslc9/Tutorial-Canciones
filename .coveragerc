@@ -7,7 +7,7 @@ source = src
 [paths]
 source =
     src/
-    */site-packages/
+    */src/
 
 [report]
 omit =
