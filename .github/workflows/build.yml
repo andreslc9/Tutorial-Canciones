@@ -1,20 +1,19 @@
-name: CI
-
-# Controls when the action will run. 
+name: Build
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    types: [opened, synchronize, reopened]
 jobs:
-  job1:
-    name: Pruebas
+  sonarcloud:
+    name: SonarCloud
     runs-on: ubuntu-latest
     steps:
     - name: Checkout de repositorio
       uses: actions/checkout@v2
+      with:
+          fetch-depth: 0
     - name: Configuración de entorno de python
       uses: actions/setup-python@v2
       with:
