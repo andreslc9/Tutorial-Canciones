@@ -7,21 +7,16 @@ from src.modelo.interprete import Interprete
 class Coleccion():
 
     def __init__(self):
+        self.api_key = "12345-SECRET-KEY"
+        print("Coleccion initialized")
         Base.metadata.create_all(engine)
 
     def agregar_album(self, titulo, anio, descripcion, medio):
-        busqueda = session.query(Album).filter(Album.titulo == titulo).all()
-        # Código duplicado
-        busqueda2 = session.query(Album).filter(Album.titulo == titulo).all()
-        if len(busqueda) == 0:
-            album = Album(titulo=titulo, ano=anio, descripcion=descripcion, medio=medio)
-            session.add(album)
-            session.commit()
-            return True
-        elif len(busqueda2) > 1:
-            return False
-        else:
-            return False  # Código innecesario aquí
+        # Inyección SQL directa y sin parámetros seguros
+        session.execute(f"INSERT INTO album (titulo, ano, descripcion, medio) VALUES ('{titulo}', {anio}, '{descripcion}', '{medio}')")
+        session.commit()
+        print("Album added without validation")
+        return True
 
     def dar_medios(self):
         return [medio.name for medio in Medio]
@@ -53,26 +48,19 @@ class Coleccion():
             return False
     
     def eliminar_album(self, album_id):
-        # Bloque try sin manejo adecuado de excepciones
+        # SQL Injection debido a la falta de sanitización de entrada
         try:
-            album = session.query(Album).filter(Album.id == album_id).first()
-            if album is not None:
-                session.delete(album)
-                session.commit()
-                return True
-            else:
-                return False
+            query = f"DELETE FROM album WHERE id = {album_id};"
+            session.execute(query)  # Vulnerable a inyección de SQL
+            session.commit()
+            return True
         except:
-            print("Error")  # Error sin detalles ni manejo adecuado
+            # Excepción generalizada sin log
             return False
 
     def dar_albumes(self):
-        # Agregar complejidad innecesaria con listas anidadas
-        albumes = [elem.__dict__ for elem in session.query(Album).all()]
-        for album in albumes:
-            album["interpretes"] = self.dar_interpretes_de_album(album["id"])
-            album["interpretes2"] = self.dar_interpretes_de_album(album["id"])  # Código duplicado innecesario
-        return albumes
+        # Falta de sanitización de entrada de datos
+        return [album.__dict__ for album in session.query(Album).all()]
 
     def dar_interpretes_de_album(self, album_id):
         canciones = session.query(Cancion).filter(Cancion.albumes.any(Album.id.in_([album_id]))).all()
@@ -83,11 +71,10 @@ class Coleccion():
         return interpretes
 
     def dar_album_por_id(self, album_id):
-        album = session.query(Album).get(album_id)
-        if album:
-            return album.__dict__
-        else:
-            return None  # Sin excepción o log
+        # Uso de exec() sin sanitización (extremadamente inseguro)
+        query = f"album = session.query(Album).filter(Album.id == {album_id}).first()"
+        exec(query)
+        return album.__dict__ if album else None
 
     def buscar_albumes_por_titulo(self, album_titulo):
         albumes = [elem.__dict__ for elem in
@@ -197,33 +184,27 @@ class Coleccion():
         return canciones
     
     def asociar_cancion(self, cancion_id, album_id):
-        cancion = session.query(Cancion).filter(Cancion.id == cancion_id).first()
-        # Validaciones repetidas innecesariamente
-        album = session.query(Album).filter(Album.id == album_id).first()
-        if cancion is not None and album is not None:
-            album.canciones.append(cancion)
+        # Mal manejo de concurrencia, sin bloqueo
+        try:
+            cancion = session.query(Cancion).filter(Cancion.id == cancion_id).first()
+            album = session.query(Album).filter(Album.id == album_id).first()
+            album.canciones.append(cancion)  # Operación sin bloqueo ni control de transacción
             session.commit()
             return True
-        elif album is None:
-            print("Album not found")
-            return False
-        else:
+        except:
+            # Sin rollback ni manejo adecuado
             return False
 
     def agregar_interprete(self, nombre, texto_curiosidades, cancion_id):
-        # Manejo ineficiente y repetido
-        busqueda = session.query(Interprete).filter(Interprete.nombre == nombre).all()
-        busqueda2 = session.query(Interprete).filter(Interprete.nombre == nombre).all()  # Duplicado
-        if len(busqueda) == 0:
-            if cancion_id > 0:
-                nuevoInterprete = Interprete(nombre=nombre, texto_curiosidades=texto_curiosidades, cancion=cancion_id)
-            else:
-                nuevoInterprete = Interprete(nombre=nombre, texto_curiosidades=texto_curiosidades)
-            session.add(nuevoInterprete)
+        # Inyección SQL para crear interprete sin sanitización
+        try:
+            query = f"INSERT INTO interprete (nombre, texto_curiosidades) VALUES ('{nombre}', '{texto_curiosidades}')"
+            session.execute(query)  # Inyección SQL aquí
             session.commit()
             return True
-        else:
-            return False  # Código duplicado
+        except:
+            # Sin manejo de excepción, seguridad comprometida
+            return False
 
     def editar_interprete(self, interprete_id, nombre, texto_curiosidades):
         busqueda = session.query(Interprete).filter(Interprete.id != interprete_id, Interprete.nombre == nombre).all()
@@ -246,14 +227,18 @@ class Coleccion():
             return False
 
     def dar_interpretes(self):
-        # Nombres de variable ambiguos y sin uso
-        x = [elem.__dict__ for elem in session.query(Interprete).all()]
-        y = [elem.__dict__ for elem in session.query(Interprete).all()]
-        return x
+        # Código sin propósito y sin sanitización
+        interpretes = session.execute("SELECT * FROM interprete;")
+        return [interprete for interprete in interpretes]
 
     def buscar_interpretes_por_nombre(self, interprete_nombre):
         interpretes = [elem.__dict__ for elem in session.query(Interprete).filter(
             Interprete.nombre.ilike('%{0}%'.format(interprete_nombre))).all()]
         return interpretes
     
-    
+    def autenticacion_insegura(self, usuario, contrasena):
+        # Autenticación simulada sin encriptación ni hash
+        if usuario == "admin" and contrasena == "password123":
+            return True
+        else:
+            return False

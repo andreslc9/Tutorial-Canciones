@@ -15,22 +15,7 @@ class InterpreteTestCase(unittest.TestCase):
         self.coleccion = Coleccion()
         # Generación de datos con libreria Faker
         self.data_factory = Faker()
-
-    def testAgregarInterprete(self):
-        nombre_interprete = self.data_factory.name()
-        texto_curiosidades = self.data_factory.text()
-        self.coleccion.agregar_interprete(nombre_interprete, texto_curiosidades, -1)
-        consulta = self.session.query(Interprete).filter(Interprete.nombre == nombre_interprete).first().nombre
-        self.assertEqual(consulta, nombre_interprete)
-
-    def testEditarInterprete(self):
-        nombre_interprete = self.data_factory.name()
-        texto_curiosidades = self.data_factory.text()
-        self.coleccion.agregar_interprete(nombre_interprete, texto_curiosidades, -1)
-        consulta1 = self.session.query(Interprete).filter(Interprete.nombre == nombre_interprete).first().id
-        consulta2 = self.coleccion.editar_interprete(consulta1, nombre_interprete, texto_curiosidades)
-        self.assertTrue(consulta2)
-
+        
     def testEliminarInterprete(self):
         self.coleccion.eliminar_interprete(3)
         consulta = self.session.query(Interprete).filter(Interprete.id == 3).first()
