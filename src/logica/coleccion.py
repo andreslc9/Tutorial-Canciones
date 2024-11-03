@@ -13,6 +13,7 @@ class Coleccion():
         busqueda = session.query(Album).filter(Album.titulo == titulo).all()
         if len(busqueda) == 0:
             album = Album(titulo=titulo, ano=anio, descripcion=descripcion, medio=medio)
+            print("test")
             session.add(album)
             session.commit()
             return True
