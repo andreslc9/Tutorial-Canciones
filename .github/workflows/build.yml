@@ -13,29 +13,27 @@ jobs:
     - name: Checkout de repositorio
       uses: actions/checkout@v2
       with:
-          fetch-depth: 0
+        fetch-depth: 0
     - name: Configuración de entorno de python
       uses: actions/setup-python@v2
       with:
-          python-version: '3.9'
+        python-version: '3.9'
     - name: Instalación de librerías y dependencias
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install coverage
-    - name: pruebas+coverage
+    - name: Pruebas y generación de cobertura
       id: pruebas
       run: |
-        
+        cd src  # Cambia el directorio de trabajo a src para ejecutar pruebas
         python -m coverage run -m unittest discover tests
-        python -m coverage report  # Muestra reporte en la consola
-        cd src  # Cambia el directorio de trabajo
-        python -m coverage xml     # Genera el archivo coverage.xml
+        python -m coverage report  # Muestra el reporte en consola
+        python -m coverage xml -o ../coverage.xml  # Genera el archivo en la raíz
     - name: Verificar archivo coverage.xml
-      run: cat src/coverage.xml
+      run: cat coverage.xml  # Confirma que el archivo esté en la raíz
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
