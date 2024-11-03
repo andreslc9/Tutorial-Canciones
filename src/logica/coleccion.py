@@ -215,3 +215,72 @@ class Coleccion():
         interpretes = [elem.__dict__ for elem in session.query(Interprete).filter(
             Interprete.nombre.ilike('%{0}%'.format(interprete_nombre))).all()]
         return interpretes
+    
+      # Duplicación deliberada de la función agregar_album con un error en el nombre
+    def agregar_album_duplicado(self, titulo, anio, descripcion, medio):
+        busqueda = session.query(Album).filter(Album.titulo == titulo).all()
+        if len(busqueda) == 0:
+            album = Album(titulo=titulo, ano=anio, descripcion=descripcion, medio=medio)
+            session.add(album)
+            session.commit()
+            return True
+        else:
+            return False
+
+    # Función que causa un error deliberado al no manejar excepciones
+    def eliminar_album_sin_excepcion(self, album_id):
+        album = session.query(Album).filter(Album.id == album_id).first()
+        session.delete(album)  # Esto puede causar un error si album es None
+        session.commit()
+        return True
+
+    # Nueva función para obtener álbumes, pero con implementación incorrecta
+    def obtener_albumes_incorrecto(self):
+        albumes = session.query(Album).all()
+        return [album.titulo for album in albumes if album.ano < 2000]  # Supone que hay un error en el filtro
+
+    # Función redundante que hace lo mismo que dar_albumes
+    def listar_albumes(self):
+        return self.dar_albumes()
+
+    # Función que causa un error deliberado por uso incorrecto de variables
+    def editar_album_con_error(self, album_id, titulo, anio, descripcion, medio):
+        busqueda = session.query(Album).filter(Album.titulo == titulo, Album.id != album_id).all()
+        if len(busqueda) == 0:
+            album = session.query(Album).filter(Album.id == album_id).first()
+            album.titulo = titulo
+            album.ano = anio
+            album.descripcion = descripcion
+            album.medio = medio
+            session.commit()
+            return "Album actualizado correctamente"
+        else:
+            return "Error: El álbum con este título ya existe."  # Mensaje de error confuso
+
+    # Función para agregar canción pero con un bug deliberado
+    def agregar_cancion_con_error(self, titulo, minutos, segundos, compositor, album_id, interpretes):
+        if not interpretes:  # Intenta validar mal la lista de intérpretes
+            return False
+        album = session.query(Album).filter(Album.id == album_id).first()
+        nuevaCancion = Cancion(titulo=titulo, minutos=minutos, segundos=segundos, compositor=compositor)
+        session.add(nuevaCancion)
+        # Faltó agregar la relación de la canción con el álbum
+        return True
+
+    # Función que devuelve todas las canciones pero con un mal manejo de excepciones
+    def dar_canciones_con_error(self):
+        try:
+            canciones = session.query(Cancion).all()
+            return canciones
+        except:
+            return []  # Ignora el error
+
+    # Duplicación deliberada de la función dar_canciones
+    def obtener_todas_las_canciones(self):
+        return self.dar_canciones()  # Llama a la misma función
+
+    # Una nueva función que intenta mezclar funciones pero termina siendo confusa
+    def buscar_album_y_cancion(self, album_titulo, cancion_titulo):
+        albumes = session.query(Album).filter(Album.titulo.ilike(f'%{album_titulo}%')).all()
+        canciones = session.query(Cancion).filter(Cancion.titulo.ilike(f'%{cancion_titulo}%')).all()
+        return (albumes, canciones)  # Retorna ambas listas sin un contexto claro
