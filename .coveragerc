@@ -3,17 +3,17 @@
 branch = True
 source = src
 # omit = bad_file.py
-[report]
-omit =
-    */tests/*
-    */vista/*
-    */setup.py
+
 [paths]
 source =
     src/
     */site-packages/
 
 [report]
+omit =
+    */tests/*
+    */vista/*
+    */setup.py
 # Regexes for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma
