@@ -24,10 +24,13 @@ jobs:
         pip install -r requirements.txt
         pip install coverage
     - name: pruebas+coverage
-        id: pruebas
-        run: | 
-          python -m coverage run -m unittest discover tests 
-          python -m coverage xml -i 
+      id: pruebas
+      run: |
+        python -m coverage run -m unittest discover tests
+        python -m coverage combine
+        python -m coverage xml
+    - name: Verificar archivo coverage.xml
+      run: cat coverage.xml
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
