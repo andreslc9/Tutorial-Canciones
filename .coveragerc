@@ -6,8 +6,8 @@ source = src
 
 [paths]
 source =
-    src/
-    */src/
+    src
+    .
 
 [report]
 omit =
