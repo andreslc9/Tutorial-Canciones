@@ -26,11 +26,13 @@ jobs:
     - name: pruebas+coverage
       id: pruebas
       run: |
+        
         python -m coverage run -m unittest discover tests
         python -m coverage report  # Muestra reporte en la consola
+        cd src  # Cambia el directorio de trabajo
         python -m coverage xml     # Genera el archivo coverage.xml
     - name: Verificar archivo coverage.xml
-      run: cat coverage.xml
+      run: cat src/coverage.xml
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
