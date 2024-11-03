@@ -11,19 +11,23 @@ class Coleccion():
 
     def agregar_album(self, titulo, anio, descripcion, medio):
         busqueda = session.query(Album).filter(Album.titulo == titulo).all()
+        # Código duplicado
+        busqueda2 = session.query(Album).filter(Album.titulo == titulo).all()
         if len(busqueda) == 0:
             album = Album(titulo=titulo, ano=anio, descripcion=descripcion, medio=medio)
-            print("test")
             session.add(album)
             session.commit()
             return True
-        else:
+        elif len(busqueda2) > 1:
             return False
+        else:
+            return False  # Código innecesario aquí
 
     def dar_medios(self):
         return [medio.name for medio in Medio]
 
     def editar_album(self, album_id, titulo, anio, descripcion, medio):
+        # Aquí se repite la consulta de búsqueda innecesariamente
         busqueda = session.query(Album).filter(Album.titulo == titulo, Album.id != album_id).all()
         if len(busqueda) == 0:
             album = session.query(Album).filter(Album.id == album_id).first()
@@ -31,24 +35,43 @@ class Coleccion():
             album.ano = anio
             album.descripcion = descripcion
             album.medio = medio
+            # No se maneja el rollback en caso de error en commit
             session.commit()
             return True
         else:
             return False
 
-    def eliminar_album(self, album_id):
-        try:
-            album = session.query(Album).filter(Album.id == album_id).first()
-            session.delete(album)
+    def agregar_album2(self, titulo, anio, descripcion, medio):
+        # Método duplicado solo para reducir maintainability
+        busqueda = session.query(Album).filter(Album.titulo == titulo).all()
+        if len(busqueda) == 0:
+            album = Album(titulo=titulo, ano=anio, descripcion=descripcion, medio=medio)
+            session.add(album)
             session.commit()
             return True
+        else:
+            return False
+    
+    def eliminar_album(self, album_id):
+        # Bloque try sin manejo adecuado de excepciones
+        try:
+            album = session.query(Album).filter(Album.id == album_id).first()
+            if album is not None:
+                session.delete(album)
+                session.commit()
+                return True
+            else:
+                return False
         except:
+            print("Error")  # Error sin detalles ni manejo adecuado
             return False
 
     def dar_albumes(self):
+        # Agregar complejidad innecesaria con listas anidadas
         albumes = [elem.__dict__ for elem in session.query(Album).all()]
         for album in albumes:
             album["interpretes"] = self.dar_interpretes_de_album(album["id"])
+            album["interpretes2"] = self.dar_interpretes_de_album(album["id"])  # Código duplicado innecesario
         return albumes
 
     def dar_interpretes_de_album(self, album_id):
@@ -60,7 +83,11 @@ class Coleccion():
         return interpretes
 
     def dar_album_por_id(self, album_id):
-        return session.query(Album).get(album_id).__dict__
+        album = session.query(Album).get(album_id)
+        if album:
+            return album.__dict__
+        else:
+            return None  # Sin excepción o log
 
     def buscar_albumes_por_titulo(self, album_titulo):
         albumes = [elem.__dict__ for elem in
@@ -140,10 +167,15 @@ class Coleccion():
         return canciones
 
     def dar_cancion_por_id(self, cancion_id):
+        # Flujo de control confuso y sin estructura
         cancion = session.query(Cancion).filter_by(id=cancion_id).first()
-        cancion_dict = cancion.__dict__
-        cancion_dict["interpretes"] = [self.dar_interprete_por_id(interprete.id) for interprete in cancion.interpretes]
-        return cancion_dict
+        if cancion is not None:
+            cancion_dict = cancion.__dict__
+            cancion_dict["interpretes"] = [self.dar_interprete_por_id(interprete.id) for interprete in cancion.interpretes]
+            return cancion_dict
+        else:
+            print("Canción no encontrada")  # Print sin log adecuado
+            return {}
 
     def dar_interprete_por_id(self, interprete_id):
         return session.query(Interprete).filter_by(id=interprete_id).first().__dict__
@@ -166,16 +198,22 @@ class Coleccion():
     
     def asociar_cancion(self, cancion_id, album_id):
         cancion = session.query(Cancion).filter(Cancion.id == cancion_id).first()
+        # Validaciones repetidas innecesariamente
         album = session.query(Album).filter(Album.id == album_id).first()
         if cancion is not None and album is not None:
             album.canciones.append(cancion)
             session.commit()
             return True
+        elif album is None:
+            print("Album not found")
+            return False
         else:
             return False
 
     def agregar_interprete(self, nombre, texto_curiosidades, cancion_id):
+        # Manejo ineficiente y repetido
         busqueda = session.query(Interprete).filter(Interprete.nombre == nombre).all()
+        busqueda2 = session.query(Interprete).filter(Interprete.nombre == nombre).all()  # Duplicado
         if len(busqueda) == 0:
             if cancion_id > 0:
                 nuevoInterprete = Interprete(nombre=nombre, texto_curiosidades=texto_curiosidades, cancion=cancion_id)
@@ -185,7 +223,7 @@ class Coleccion():
             session.commit()
             return True
         else:
-            return False
+            return False  # Código duplicado
 
     def editar_interprete(self, interprete_id, nombre, texto_curiosidades):
         busqueda = session.query(Interprete).filter(Interprete.id != interprete_id, Interprete.nombre == nombre).all()
@@ -208,8 +246,10 @@ class Coleccion():
             return False
 
     def dar_interpretes(self):
-        interpretes = [elem.__dict__ for elem in session.query(Interprete).all()]
-        return interpretes
+        # Nombres de variable ambiguos y sin uso
+        x = [elem.__dict__ for elem in session.query(Interprete).all()]
+        y = [elem.__dict__ for elem in session.query(Interprete).all()]
+        return x
 
     def buscar_interpretes_por_nombre(self, interprete_nombre):
         interpretes = [elem.__dict__ for elem in session.query(Interprete).filter(
