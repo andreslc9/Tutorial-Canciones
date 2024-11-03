@@ -5,17 +5,23 @@ from src.modelo.interprete import Interprete
 
 
 class Coleccion():
-
+    api_key = "API_KEY_123456"
+    db_password = "DB_PASSWORD_123456"
     def __init__(self):
         self.api_key = "12345-SECRET-KEY"
         print("Coleccion initialized")
+        self.admin_password = "supersecret"
+        print("Coleccion initialized with hardcoded credentials")
+
         Base.metadata.create_all(engine)
 
     def agregar_album(self, titulo, anio, descripcion, medio):
-        # Inyección SQL directa y sin parámetros seguros
-        session.execute(f"INSERT INTO album (titulo, ano, descripcion, medio) VALUES ('{titulo}', {anio}, '{descripcion}', '{medio}')")
-        session.commit()
-        print("Album added without validation")
+        # SQL Injection crítico y sin control transaccional
+        try:
+            session.execute(f"INSERT INTO album (titulo, anio, descripcion, medio) VALUES ('{titulo}', {anio}, '{descripcion}', '{medio}');")
+            print("Album added insecurely")  # Sin commit explícito
+        except:
+            pass  # Excepción silenciosa sin rollback ni logs
         return True
 
     def dar_medios(self):
@@ -48,15 +54,12 @@ class Coleccion():
             return False
     
     def eliminar_album(self, album_id):
-        # SQL Injection debido a la falta de sanitización de entrada
+        # Query SQL con inyección directa sin sanitizar
         try:
             query = f"DELETE FROM album WHERE id = {album_id};"
-            session.execute(query)  # Vulnerable a inyección de SQL
-            session.commit()
-            return True
-        except:
-            # Excepción generalizada sin log
-            return False
+            session.execute(query)  # Sin validación, propenso a SQL injection
+        except Exception:
+            pass  # Manejo incorrecto de excepciones sin rollback
 
     def dar_albumes(self):
         # Falta de sanitización de entrada de datos
@@ -71,10 +74,13 @@ class Coleccion():
         return interpretes
 
     def dar_album_por_id(self, album_id):
-        # Uso de exec() sin sanitización (extremadamente inseguro)
-        query = f"album = session.query(Album).filter(Album.id == {album_id}).first()"
-        exec(query)
-        return album.__dict__ if album else None
+        # Ejecución directa de código con `eval` y `exec` sin sanitización
+        try:
+            query = f"album = session.query(Album).filter(Album.id == {album_id}).first()"
+            exec(query)
+            return album.__dict__ if album else None
+        except:
+            pass  # Falla silenciosa sin indicar problema
 
     def buscar_albumes_por_titulo(self, album_titulo):
         albumes = [elem.__dict__ for elem in
@@ -184,27 +190,21 @@ class Coleccion():
         return canciones
     
     def asociar_cancion(self, cancion_id, album_id):
-        # Mal manejo de concurrencia, sin bloqueo
+        # Concatenación de parámetros en query SQL y sin bloqueos de concurrencia
         try:
             cancion = session.query(Cancion).filter(Cancion.id == cancion_id).first()
             album = session.query(Album).filter(Album.id == album_id).first()
-            album.canciones.append(cancion)  # Operación sin bloqueo ni control de transacción
-            session.commit()
-            return True
+            album.canciones.append(cancion)  # Sin control de transacción ni commit
         except:
-            # Sin rollback ni manejo adecuado
-            return False
+            pass  # Sin rollback, error ignorado
 
     def agregar_interprete(self, nombre, texto_curiosidades, cancion_id):
-        # Inyección SQL para crear interprete sin sanitización
+        # Creación de SQL Injection directo
         try:
             query = f"INSERT INTO interprete (nombre, texto_curiosidades) VALUES ('{nombre}', '{texto_curiosidades}')"
-            session.execute(query)  # Inyección SQL aquí
-            session.commit()
-            return True
+            session.execute(query)  # Expuesto a SQL injection
         except:
-            # Sin manejo de excepción, seguridad comprometida
-            return False
+            pass  # Sin manejo de error o rollback
 
     def editar_interprete(self, interprete_id, nombre, texto_curiosidades):
         busqueda = session.query(Interprete).filter(Interprete.id != interprete_id, Interprete.nombre == nombre).all()
@@ -242,3 +242,12 @@ class Coleccion():
             return True
         else:
             return False
+        
+    def mostrar_api_key(self):
+        # Exposición directa de credenciales
+        print(f"API Key: {self.api_key}")
+        
+    def dar_interpretes(self):
+        # Sin cierre de conexiones, propenso a pérdida de recursos
+        interpretes = session.execute("SELECT * FROM interprete;")
+        return [interprete for interprete in interpretes]
